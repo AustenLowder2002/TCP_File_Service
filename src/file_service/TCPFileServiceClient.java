@@ -1,7 +1,12 @@
 package file_service;
 
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
@@ -41,7 +46,31 @@ public class TCPFileServiceClient {
                     System.out.println(new String(a));
                     break;
                 case "U":
-                    break;
+                    String filePath = "file_to_send.txt"; // Path to the file to upload
+
+                        File file = new File(filePath);
+                        Socket socket = new Socket(serverIP, serverPort);
+                        OutputStream outputStream = socket.getOutputStream();
+
+                        // Send the file name to the server
+                        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+                        dataOutputStream.writeUTF(file.getName());
+
+                        // Create an input stream to read the file
+                        FileInputStream fileInputStream = new FileInputStream(file);
+                        byte[] buffer = new byte[1024];
+
+                        // Read from the file and write to the socket
+                        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+
+                        System.out.println("File sent successfully.");
+
+                        // Close streams and socket
+                        fileInputStream.close();
+                        socket.close();
+                        break;
                 case "G":
                     break;
                 case "R":
