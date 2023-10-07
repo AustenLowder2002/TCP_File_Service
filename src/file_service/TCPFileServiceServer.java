@@ -16,7 +16,7 @@ public class TCPFileServiceServer {
         welcomeChannel.socket().bind(new InetSocketAddress(port));
         while (true) {
             SocketChannel serveChannel = welcomeChannel.accept();
-            ByteBuffer request = ByteBuffer.allocate(2500);
+            ByteBuffer request = ByteBuffer.allocate(1024);
             int numBytes = 0;
             do {
                 numBytes = serveChannel.read(request);
@@ -39,13 +39,13 @@ public class TCPFileServiceServer {
                             success = file.delete();
                         }
                         if (success) {
-                            ByteBuffer code =
+                            ByteBuffer deleteCode =
                                     ByteBuffer.wrap("S".getBytes());
-                            serveChannel.write(code);
+                            serveChannel.write(deleteCode);
                         } else {
-                            ByteBuffer code =
+                            ByteBuffer deleteCode =
                                     ByteBuffer.wrap("F".getBytes());
-                            serveChannel.write(code);
+                            serveChannel.write(deleteCode);
                         }
                         serveChannel.close();
                         break;
