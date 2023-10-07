@@ -52,15 +52,12 @@ public class TCPFileServiceClient {
                         channel.connect(
                                 new InetSocketAddress(serverIP, serverPort));
 
-                        // Send the command
                         ByteBuffer uploadCommand = ByteBuffer.wrap(command.getBytes());
                         channel.write(uploadCommand);
 
-                        // Send the file name to the server
                         ByteBuffer fileNameBuffer = ByteBuffer.wrap(uploadFileName.getBytes());
                         channel.write(fileNameBuffer);
 
-                        // Send the file data to the server
                         FileInputStream fileInputStream = new FileInputStream(uploadFile);
                         byte[] uploadBuffer = new byte[1024];
 
