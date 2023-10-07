@@ -84,22 +84,20 @@ public class TCPFileServiceClient {
                     System.out.println("Please enter the file name to download:");
                     String downloadFileName = input.nextLine();
 
-                    // Send the command
                     ByteBuffer downloadCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(downloadCommand);
 
-                    // Send the file name to the server
+
                     ByteBuffer downloadFileNameBuffer = ByteBuffer.wrap(downloadFileName.getBytes());
                     channel.write(downloadFileNameBuffer);
 
-                    // Receive and display the server's response
                     ByteBuffer downloadResponseBuffer = ByteBuffer.allocate(1);
                     channel.read(downloadResponseBuffer);
                     downloadResponseBuffer.flip();
                     byte downloadResponse = downloadResponseBuffer.get();
 
                     if (downloadResponse == 'S') {
-                        // Receive and save the file data
+
                         FileOutputStream fileOutputStream = new FileOutputStream(downloadFileName);
                         ByteBuffer fileData = ByteBuffer.allocate(1024);
                         int bytesReceived;
@@ -124,17 +122,15 @@ public class TCPFileServiceClient {
                     System.out.println("Please enter the new file name:");
                     String newFileName = input.nextLine();
 
-                    // Send the command
                     ByteBuffer renameCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(renameCommand);
 
-                    // Send the old and new file names to the server
                     ByteBuffer oldFileNameBuffer = ByteBuffer.wrap(oldFileName.getBytes());
                     channel.write(oldFileNameBuffer);
                     ByteBuffer newFileNameBuffer = ByteBuffer.wrap(newFileName.getBytes());
                     channel.write(newFileNameBuffer);
 
-                    // Receive and display the server's response
+
                     ByteBuffer renameResponseBuffer = ByteBuffer.allocate(1);
                     channel.read(renameResponseBuffer);
                     renameResponseBuffer.flip();
@@ -147,12 +143,10 @@ public class TCPFileServiceClient {
                     }
                     break;
                 case "L":
-                    // Send the command
                     ByteBuffer listCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(listCommand);
 
-                    // Receive and display the server's response
-                    ByteBuffer listResponseBuffer = ByteBuffer.allocate(1024); // Adjust the buffer size as needed
+                    ByteBuffer listResponseBuffer = ByteBuffer.allocate(1024);
 
                     while ((bytesRead = channel.read(listResponseBuffer)) > 0) {
                         listResponseBuffer.flip();
@@ -176,6 +170,3 @@ public class TCPFileServiceClient {
         }while(!command.equals("Q"));
     }
 }
-/*TODO server side command = read 1st byte then switch(command): case,
-output files in different folders for server/client file f = new file("directoryName/FileName)
-*/
