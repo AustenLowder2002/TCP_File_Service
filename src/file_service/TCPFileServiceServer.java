@@ -10,10 +10,10 @@ import java.nio.file.Files;
 
 public class TCPFileServiceServer {
     public static void main(String[] args) throws Exception {
-        int port = 3000;
+        int serverPort = 3000;
         ServerSocketChannel welcomeChannel =
                 ServerSocketChannel.open();
-        welcomeChannel.socket().bind(new InetSocketAddress(port));
+        welcomeChannel.socket().bind(new InetSocketAddress(serverPort));
         while (true) {
             SocketChannel serveChannel = welcomeChannel.accept();
             ByteBuffer request = ByteBuffer.allocate(1024);
