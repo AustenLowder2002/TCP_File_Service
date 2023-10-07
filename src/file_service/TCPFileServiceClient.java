@@ -143,9 +143,9 @@ public class TCPFileServiceClient {
                     ByteBuffer renameResponseBuffer = ByteBuffer.allocate(1);
                     channel.read(renameResponseBuffer);
                     renameResponseBuffer.flip();
-                    byte renameResponse = renameResponseBuffer.get();
+                    byte renameCode = renameResponseBuffer.get();
 
-                    if (renameResponse == 'S') {
+                    if (renameCode == 'S') {
                         System.out.println("Rename successful.");
                     } else {
                         System.out.println("Rename failed.");
@@ -159,14 +159,14 @@ public class TCPFileServiceClient {
                     ByteBuffer listCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(listCommand);
 
-                    ByteBuffer listResponseBuffer = ByteBuffer.allocate(1024);
+                    ByteBuffer listOutput = ByteBuffer.allocate(1024);
 
-                    while ((bytesRead = channel.read(listResponseBuffer)) > 0) {
-                        listResponseBuffer.flip();
+                    while ((bytesRead = channel.read(listOutput)) > 0) {
+                        listOutput.flip();
                         byte[] dataBytes = new byte[bytesRead];
-                        listResponseBuffer.get(dataBytes);
+                        listOutput.get(dataBytes);
                         System.out.println(new String(dataBytes));
-                        listResponseBuffer.clear();
+                        listOutput.clear();
                     }
 
                     if (bytesRead == -1) {
