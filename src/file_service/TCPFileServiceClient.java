@@ -3,39 +3,41 @@ package file_service;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 
 public class TCPFileServiceClient {
-    public static void main(String[] args) throws Exception{
-    if(args.length != 2){
-        System.out.println("Syntax: TCPFileServiceClient <ServerIP> <ServerPort>");
+    public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            System.out.println("Syntax: TCPFileServiceClient <ServerIP> <ServerPort>");
+            return;
         }
         int serverPort = Integer.parseInt(args[1]);
         InetAddress serverIP = InetAddress.getByName(args[0]);
         String command = "";
 
-        do{
+        do {
             Scanner input = new Scanner(System.in);
             System.out.println("Please type a command: ");
             command = input.nextLine().toUpperCase();
-            switch(command){
+            SocketChannel channel = null;
+
+            switch (command) {
                 case "D":
                     System.out.println("Please enter the file name:");
                     String filename = input.nextLine();
                     ByteBuffer request =
-                            ByteBuffer.wrap((command+filename).getBytes());
-                    SocketChannel channel = SocketChannel.open();
+                            ByteBuffer.wrap((command + filename).getBytes());
+                    channel = SocketChannel.open();
                     channel.connect(
                             new InetSocketAddress(serverIP, serverPort));
                     channel.write(request);
                     channel.shutdownOutput();
-                    //S for Success, F for Failure
+
                     int bytesRead = 1;
                     ByteBuffer statusCode = ByteBuffer.allocate(bytesRead);
-                    while((bytesRead -= channel.read(statusCode))> 0);
+                    while ((bytesRead -= channel.read(statusCode)) > 0) ;
                     statusCode.flip();
                     byte[] a = new byte[bytesRead];
                     statusCode.get(a);
@@ -46,6 +48,10 @@ public class TCPFileServiceClient {
                     String uploadFileName = input.nextLine();
                     File uploadFile = new File(uploadFileName);
                     if (uploadFile.exists()) {
+                        channel = SocketChannel.open();
+                        channel.connect(
+                                new InetSocketAddress(serverIP, serverPort));
+
                         // Send the command
                         ByteBuffer uploadCommand = ByteBuffer.wrap(command.getBytes());
                         channel.write(uploadCommand);
@@ -83,10 +89,12 @@ public class TCPFileServiceClient {
                 case "G":
                     System.out.println("Please enter the file name to download:");
                     String downloadFileName = input.nextLine();
+                    channel = SocketChannel.open();
+                    channel.connect(
+                            new InetSocketAddress(serverIP, serverPort));
 
                     ByteBuffer downloadCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(downloadCommand);
-
 
                     ByteBuffer downloadFileNameBuffer = ByteBuffer.wrap(downloadFileName.getBytes());
                     channel.write(downloadFileNameBuffer);
@@ -97,7 +105,6 @@ public class TCPFileServiceClient {
                     byte downloadResponse = downloadResponseBuffer.get();
 
                     if (downloadResponse == 'S') {
-
                         FileOutputStream fileOutputStream = new FileOutputStream(downloadFileName);
                         ByteBuffer fileData = ByteBuffer.allocate(1024);
                         int bytesReceived;
@@ -121,6 +128,9 @@ public class TCPFileServiceClient {
                     String oldFileName = input.nextLine();
                     System.out.println("Please enter the new file name:");
                     String newFileName = input.nextLine();
+                    channel = SocketChannel.open();
+                    channel.connect(
+                            new InetSocketAddress(serverIP, serverPort));
 
                     ByteBuffer renameCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(renameCommand);
@@ -129,7 +139,6 @@ public class TCPFileServiceClient {
                     channel.write(oldFileNameBuffer);
                     ByteBuffer newFileNameBuffer = ByteBuffer.wrap(newFileName.getBytes());
                     channel.write(newFileNameBuffer);
-
 
                     ByteBuffer renameResponseBuffer = ByteBuffer.allocate(1);
                     channel.read(renameResponseBuffer);
@@ -143,6 +152,10 @@ public class TCPFileServiceClient {
                     }
                     break;
                 case "L":
+                    channel = SocketChannel.open();
+                    channel.connect(
+                            new InetSocketAddress(serverIP, serverPort));
+
                     ByteBuffer listCommand = ByteBuffer.wrap(command.getBytes());
                     channel.write(listCommand);
 
@@ -163,10 +176,13 @@ public class TCPFileServiceClient {
                     }
                     break;
                 default:
-                    if(!command.equals("Q")){
+                    if (!command.equals("Q")) {
                         System.out.println("Unknown command");
                     }
             }
-        }while(!command.equals("Q"));
+            if (channel != null && channel.isOpen()) {
+                channel.close();
+            }
+        } while (!command.equals("Q"));
     }
 }
