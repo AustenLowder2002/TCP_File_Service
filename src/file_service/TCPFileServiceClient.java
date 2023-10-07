@@ -1,9 +1,6 @@
 package file_service;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -24,7 +21,6 @@ public class TCPFileServiceClient {
             Scanner input = new Scanner(System.in);
             System.out.println("Please type a command: ");
             command = input.nextLine().toUpperCase();
-            //TODO U for Upload, G for download, R for rename, L for list
             switch(command){
                 case "D":
                     System.out.println("Please enter the file name:");
@@ -46,36 +42,131 @@ public class TCPFileServiceClient {
                     System.out.println(new String(a));
                     break;
                 case "U":
-                    String filePath = "file_to_send.txt"; // Path to the file to upload
-
-                        File file = new File(filePath);
-                        Socket socket = new Socket(serverIP, serverPort);
-                        OutputStream outputStream = socket.getOutputStream();
+                    System.out.println("Please enter the file name to upload:");
+                    String uploadFileName = input.nextLine();
+                    File uploadFile = new File(uploadFileName);
+                    if (uploadFile.exists()) {
+                        // Send the command
+                        ByteBuffer uploadCommand = ByteBuffer.wrap(command.getBytes());
+                        channel.write(uploadCommand);
 
                         // Send the file name to the server
-                        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
-                        dataOutputStream.writeUTF(file.getName());
+                        ByteBuffer fileNameBuffer = ByteBuffer.wrap(uploadFileName.getBytes());
+                        channel.write(fileNameBuffer);
 
-                        // Create an input stream to read the file
-                        FileInputStream fileInputStream = new FileInputStream(file);
-                        byte[] buffer = new byte[1024];
+                        // Send the file data to the server
+                        FileInputStream fileInputStream = new FileInputStream(uploadFile);
+                        byte[] uploadBuffer = new byte[1024];
 
-                        // Read from the file and write to the socket
-                        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                            outputStream.write(buffer, 0, bytesRead);
+                        while ((bytesRead = fileInputStream.read(uploadBuffer)) > 0) {
+                            ByteBuffer fileDataBuffer = ByteBuffer.wrap(uploadBuffer, 0, bytesRead);
+                            channel.write(fileDataBuffer);
                         }
 
-                        System.out.println("File sent successfully.");
-
-                        // Close streams and socket
                         fileInputStream.close();
-                        socket.close();
-                        break;
+                        channel.shutdownOutput();
+
+                        // Receive and display the server's response
+                        ByteBuffer uploadResponseBuffer = ByteBuffer.allocate(1);
+                        channel.read(uploadResponseBuffer);
+                        uploadResponseBuffer.flip();
+                        byte uploadResponse = uploadResponseBuffer.get();
+                        if (uploadResponse == 'S') {
+                            System.out.println("Upload successful.");
+                        } else {
+                            System.out.println("Upload failed.");
+                        }
+                    } else {
+                        System.out.println("File not found.");
+                    }
+                    break;
                 case "G":
+                    System.out.println("Please enter the file name to download:");
+                    String downloadFileName = input.nextLine();
+
+                    // Send the command
+                    ByteBuffer downloadCommand = ByteBuffer.wrap(command.getBytes());
+                    channel.write(downloadCommand);
+
+                    // Send the file name to the server
+                    ByteBuffer downloadFileNameBuffer = ByteBuffer.wrap(downloadFileName.getBytes());
+                    channel.write(downloadFileNameBuffer);
+
+                    // Receive and display the server's response
+                    ByteBuffer downloadResponseBuffer = ByteBuffer.allocate(1);
+                    channel.read(downloadResponseBuffer);
+                    downloadResponseBuffer.flip();
+                    byte downloadResponse = downloadResponseBuffer.get();
+
+                    if (downloadResponse == 'S') {
+                        // Receive and save the file data
+                        FileOutputStream fileOutputStream = new FileOutputStream(downloadFileName);
+                        ByteBuffer fileData = ByteBuffer.allocate(1024);
+                        int bytesReceived;
+
+                        while ((bytesReceived = channel.read(fileData)) > 0) {
+                            fileData.flip();
+                            byte[] dataBytes = new byte[bytesReceived];
+                            fileData.get(dataBytes);
+                            fileOutputStream.write(dataBytes);
+                            fileData.clear();
+                        }
+
+                        fileOutputStream.close();
+                        System.out.println("Download successful.");
+                    } else {
+                        System.out.println("File not found on the server.");
+                    }
                     break;
                 case "R":
+                    System.out.println("Please enter the old file name:");
+                    String oldFileName = input.nextLine();
+                    System.out.println("Please enter the new file name:");
+                    String newFileName = input.nextLine();
+
+                    // Send the command
+                    ByteBuffer renameCommand = ByteBuffer.wrap(command.getBytes());
+                    channel.write(renameCommand);
+
+                    // Send the old and new file names to the server
+                    ByteBuffer oldFileNameBuffer = ByteBuffer.wrap(oldFileName.getBytes());
+                    channel.write(oldFileNameBuffer);
+                    ByteBuffer newFileNameBuffer = ByteBuffer.wrap(newFileName.getBytes());
+                    channel.write(newFileNameBuffer);
+
+                    // Receive and display the server's response
+                    ByteBuffer renameResponseBuffer = ByteBuffer.allocate(1);
+                    channel.read(renameResponseBuffer);
+                    renameResponseBuffer.flip();
+                    byte renameResponse = renameResponseBuffer.get();
+
+                    if (renameResponse == 'S') {
+                        System.out.println("Rename successful.");
+                    } else {
+                        System.out.println("Rename failed.");
+                    }
                     break;
                 case "L":
+                    // Send the command
+                    ByteBuffer listCommand = ByteBuffer.wrap(command.getBytes());
+                    channel.write(listCommand);
+
+                    // Receive and display the server's response
+                    ByteBuffer listResponseBuffer = ByteBuffer.allocate(1024); // Adjust the buffer size as needed
+
+                    while ((bytesRead = channel.read(listResponseBuffer)) > 0) {
+                        listResponseBuffer.flip();
+                        byte[] dataBytes = new byte[bytesRead];
+                        listResponseBuffer.get(dataBytes);
+                        System.out.println(new String(dataBytes));
+                        listResponseBuffer.clear();
+                    }
+
+                    if (bytesRead == -1) {
+                        System.out.println("List request completed.");
+                    } else {
+                        System.out.println("Error reading list response.");
+                    }
                     break;
                 default:
                     if(!command.equals("Q")){
